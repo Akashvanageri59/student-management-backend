@@ -73,7 +73,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .anyRequest().authenticated()
+                        .authorizeHttpRequests(auth -> auth
+                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/students/**").permitAll()
+                                .anyRequest().authenticated()
+                        )
                 )
 
                 .addFilterBefore(

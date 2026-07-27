@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
@@ -31,26 +32,36 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration) throws Exception {
+
         return configuration.getAuthenticationManager();
     }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        );
+
         configuration.setAllowedHeaders(List.of("*"));
+
         configuration.setAllowCredentials(true);
+
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
@@ -59,6 +70,7 @@ public class SecurityConfig {
 
         return source;
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -69,22 +81,33 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/students/**").permitAll()
-                                .anyRequest().authenticated()
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
                         )
                 )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        // Login/Register public
+                        .requestMatchers("/auth/**").permitAll()
+
+                        // Student APIs public for now
+                        .requestMatchers("/students/**").permitAll()
+
+                        // Root URL
+                        .requestMatchers("/").permitAll()
+
+                        // Everything else requires JWT
+                        .anyRequest().authenticated()
+                )
+
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 
+
         return http.build();
     }
-}
+}}
